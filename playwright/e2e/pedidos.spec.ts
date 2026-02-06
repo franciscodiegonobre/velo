@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { generateOrderId } from '../support/helpers';
 
 test('check approved order', async ({ page }) => {
 
@@ -28,9 +29,9 @@ test('check approved order', async ({ page }) => {
 
 });
 
-test('check order not found message', async({ page }) => {
+test('check order not found message', async ({ page }) => {
 
-    const orderNotFound = 'VLO-123ABC'
+    const orderNotFound = generateOrderId()
 
     // Arrange
     await page.goto('http://localhost:5173');
