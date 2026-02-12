@@ -1,54 +1,83 @@
 import { test, expect } from '@playwright/test';
 import { generateOrderId } from '../support/helpers';
 
-test('check approved order', async ({ page }) => {
+test.describe('Order check', () => {
 
-    // Test data
-    const orderID = 'VLO-5QGHJX'
+    test.beforeEach(async ({ page }) => {
+        // Arrange
+        await page.goto('http://localhost:5173');
+        await expect(page.getByTestId('hero-section').getByRole('heading')).toContainText('Velô Sprint');
+        await page.getByRole('link', { name: 'Consultar Pedido' }).click();
+        await expect(page.getByRole('heading')).toContainText('Consultar Pedido');
 
-    // AAA pattern: Arrange, Act, Assert
-    // Arrange
-    await page.goto('http://localhost:5173');
-    await expect(page.getByTestId('hero-section').getByRole('heading')).toContainText('Velô Sprint');
-    await page.getByRole('link', { name: 'Consultar Pedido' }).click();
-    await expect(page.getByRole('heading')).toContainText('Consultar Pedido');
+    })
 
-    // Act
-    await page.getByRole('textbox', { name: 'Número do Pedido' }).fill(orderID);
-    await page.getByRole('button', { name: 'Buscar Pedido' }).click();
+    test('check approved order', async ({ page }) => {
 
-    // Assert without ID
-    // Xpath locator: const orderId = page.locator('//p[text()="Pedido"/..//p[text()=orderID]]');
+        // Test data
+        const orderID = 'VLO-5QGHJX'
 
-    // PW locator strategy:
-    const orderContainer = page.getByRole('paragraph').filter({ hasText: /^Pedido$/ }).locator('..'); // climb to the parent element
-    await expect(orderContainer).toContainText(orderID);
+        // Act
+        await page.getByRole('textbox', { name: 'Número do Pedido' }).fill(orderID);
+        await page.getByRole('button', { name: 'Buscar Pedido' }).click();
 
-    // Simpler validation but more prone to errors if part of the page has the text "APROVADO"
-    await expect(page.getByText('APROVADO')).toBeVisible();
+        await expect(page.getByTestId(`order-result-${orderID}`)).toMatchAriaSnapshot(`
+            - img
+            - paragraph: Pedido
+            - paragraph: ${orderID}
+            - img
+            - text: APROVADO
+            - img "Velô Sprint"
+            - paragraph: Modelo
+            - paragraph: Velô Sprint
+            - paragraph: Cor
+            - paragraph: Lunar White
+            - paragraph: Interior
+            - paragraph: cream
+            - paragraph: Rodas
+            - paragraph: aero Wheels
+            - heading "Dados do Cliente" [level=4]
+            - paragraph: Nome
+            - paragraph: francisco nobre
+            - paragraph: Email
+            - paragraph: fran@test.com
+            - paragraph: Loja de Retirada
+            - paragraph
+            - paragraph: Data do Pedido
+            - paragraph: /\\d+\\/\\d+\\/\\d+/
+            - heading "Pagamento" [level=4]
+            - paragraph: À Vista
+            - paragraph: /R\\$ \\d+\\.\\d+,\\d+/
+            `);
 
-});
+        // // Assert without ID
+        // // Xpath locator: const orderId = page.locator('//p[text()="Pedido"/..//p[text()=orderID]]');
 
-test('check order not found message', async ({ page }) => {
+        // // PW locator strategy:
+        // const orderContainer = page.getByRole('paragraph').filter({ hasText: /^Pedido$/ }).locator('..'); // climb to the parent element
+        // await expect(orderContainer).toContainText(orderID);
 
-    const orderNotFound = generateOrderId()
+        // // Simpler validation but more prone to errors if part of the page has the text "APROVADO"
+        // await expect(page.getByText('APROVADO')).toBeVisible();
 
-    // Arrange
-    await page.goto('http://localhost:5173');
-    await expect(page.getByTestId('hero-section').getByRole('heading')).toContainText('Velô Sprint');
-    await page.getByRole('link', { name: 'Consultar Pedido' }).click();
-    await expect(page.getByRole('heading')).toContainText('Consultar Pedido');
+    });
 
-    // Act
-    await page.getByRole('textbox', { name: 'Número do Pedido' }).fill(orderNotFound);
-    await page.getByRole('button', { name: 'Buscar Pedido' }).click();
+    test('check order not found message', async ({ page }) => {
 
-    // Assert
-    // Snapshot locator strategy
-    await expect(page.locator('#root')).toMatchAriaSnapshot(`
-        - img
-        - heading "Pedido não encontrado" [level=3]
-        - paragraph: Verifique o número do pedido e tente novamente
-        `);
+        const orderNotFound = generateOrderId()
+
+        // Act
+        await page.getByRole('textbox', { name: 'Número do Pedido' }).fill(orderNotFound);
+        await page.getByRole('button', { name: 'Buscar Pedido' }).click();
+
+        // Assert
+        // Snapshot locator strategy
+        await expect(page.locator('#root')).toMatchAriaSnapshot(`
+            - img
+            - heading "Pedido não encontrado" [level=3]
+            - paragraph: Verifique o número do pedido e tente novamente
+            `);
+
+    })
 
 })
