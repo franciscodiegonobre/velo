@@ -36,8 +36,9 @@ test.describe('Order check', () => {
             - img
             - paragraph: Pedido
             - paragraph: ${order.orderID}
-            - img
-            - text: ${order.status}
+            - status:
+                - img
+                - text: ${order.status}
             - img "Velô Sprint"
             - paragraph: Modelo
             - paragraph: Velô Sprint
@@ -70,6 +71,14 @@ test.describe('Order check', () => {
 
         // // Simpler validation but more prone to errors if part of the page has the text "APROVADO"
         // await expect(page.getByText('APROVADO')).toBeVisible();
+
+        // Validate badge style = css classes
+        const statusBadge = page.getByRole('status').filter({ hasText: order.status })
+        await expect(statusBadge).toContainClass('bg-green-100')
+        await expect(statusBadge).toContainClass('text-green-700')
+
+        const statusIcon = statusBadge.locator('svg')
+        await expect(statusIcon).toContainClass('lucide-circle-check-big')
 
     });
 
@@ -98,8 +107,9 @@ test.describe('Order check', () => {
             - img
             - paragraph: Pedido
             - paragraph: ${order.orderID}
-            - img
-            - text: ${order.status}
+            - status:
+                - img
+                - text: ${order.status}
             - img "Velô Sprint"
             - paragraph: Modelo
             - paragraph: Velô Sprint
@@ -123,15 +133,71 @@ test.describe('Order check', () => {
             - paragraph: /R\\$ \\d+\\.\\d+,\\d+/
             `);
 
-        // // Assert without ID
-        // // Xpath locator: const orderId = page.locator('//p[text()="Pedido"/..//p[text()=orderID]]');
+        // Validate badge style = css classes
+        const statusBadge = page.getByRole('status').filter({ hasText: order.status })
+        await expect(statusBadge).toContainClass('bg-red-100')
+        await expect(statusBadge).toContainClass('text-red-700')
 
-        // // PW locator strategy:
-        // const orderContainer = page.getByRole('paragraph').filter({ hasText: /^Pedido$/ }).locator('..'); // climb to the parent element
-        // await expect(orderContainer).toContainText(orderID);
+        const statusIcon = statusBadge.locator('svg')
+        await expect(statusIcon).toContainClass('lucide-circle-x')
 
-        // // Simpler validation but more prone to errors if part of the page has the text "APROVADO"
-        // await expect(page.getByText('APROVADO')).toBeVisible();
+    });
+
+    test('check in analysis order', async ({ page }) => {
+
+        const order = {
+            orderID: 'VLO-FI4H5T',
+            status: 'EM_ANALISE',
+            color: 'Lunar White',
+            wheels: 'aero Wheels',
+            customer: {
+                name: 'Joao da Silva',
+                email: 'joao@velo.dev'
+            },
+            payment: 'À Vista'
+        }
+
+        // Act
+        await page.getByRole('textbox', { name: 'Número do Pedido' }).fill(order.orderID);
+        await page.getByRole('button', { name: 'Buscar Pedido' }).click();
+
+        await expect(page.getByTestId(`order-result-${order.orderID}`)).toMatchAriaSnapshot(`
+            - img
+            - paragraph: Pedido
+            - paragraph: ${order.orderID}
+            - status:
+                - img
+                - text: ${order.status}
+            - img "Velô Sprint"
+            - paragraph: Modelo
+            - paragraph: Velô Sprint
+            - paragraph: Cor
+            - paragraph: ${order.color}
+            - paragraph: Interior
+            - paragraph: cream
+            - paragraph: Rodas
+            - paragraph: ${order.wheels}
+            - heading "Dados do Cliente" [level=4]
+            - paragraph: Nome
+            - paragraph: ${order.customer.name}
+            - paragraph: Email
+            - paragraph: ${order.customer.email}
+            - paragraph: Loja de Retirada
+            - paragraph
+            - paragraph: Data do Pedido
+            - paragraph: /\\d+\\/\\d+\\/\\d+/
+            - heading "Pagamento" [level=4]
+            - paragraph: ${order.payment}
+            - paragraph: /R\\$ \\d+\\.\\d+,\\d+/
+            `);
+
+        // Validate badge style = css classes
+        const statusBadge = page.getByRole('status').filter({ hasText: order.status })
+        await expect(statusBadge).toContainClass('bg-amber-100')
+        await expect(statusBadge).toContainClass('text-amber-700')
+
+        const statusIcon = statusBadge.locator('svg')
+        await expect(statusIcon).toContainClass('lucide-clock')
 
     });
 
