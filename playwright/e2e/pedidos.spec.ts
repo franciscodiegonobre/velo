@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { generateOrderId } from '../support/helpers';
+import { OrderLookupPage } from '../support/pages/OrderLookupPage';
 
 test.describe('Order check', () => {
 
@@ -29,9 +30,10 @@ test.describe('Order check', () => {
         }
 
         // Act
-        await page.getByRole('textbox', { name: 'Número do Pedido' }).fill(order.orderID);
-        await page.getByRole('button', { name: 'Buscar Pedido' }).click();
+        const orderLookupPage = new OrderLookupPage(page)
+        await orderLookupPage.searchOrder(order.orderID)
 
+        // Assert
         await expect(page.getByTestId(`order-result-${order.orderID}`)).toMatchAriaSnapshot(`
             - img
             - paragraph: Pedido
@@ -62,16 +64,6 @@ test.describe('Order check', () => {
             - paragraph: /R\\$ \\d+\\.\\d+,\\d+/
             `);
 
-        // // Assert without ID
-        // // Xpath locator: const orderId = page.locator('//p[text()="Pedido"/..//p[text()=orderID]]');
-
-        // // PW locator strategy:
-        // const orderContainer = page.getByRole('paragraph').filter({ hasText: /^Pedido$/ }).locator('..'); // climb to the parent element
-        // await expect(orderContainer).toContainText(orderID);
-
-        // // Simpler validation but more prone to errors if part of the page has the text "APROVADO"
-        // await expect(page.getByText('APROVADO')).toBeVisible();
-
         // Validate badge style = css classes
         const statusBadge = page.getByRole('status').filter({ hasText: order.status })
         await expect(statusBadge).toContainClass('bg-green-100')
@@ -100,9 +92,10 @@ test.describe('Order check', () => {
         }
 
         // Act
-        await page.getByRole('textbox', { name: 'Número do Pedido' }).fill(order.orderID);
-        await page.getByRole('button', { name: 'Buscar Pedido' }).click();
+        const orderLookupPage = new OrderLookupPage(page)
+        await orderLookupPage.searchOrder(order.orderID)
 
+        // Assert
         await expect(page.getByTestId(`order-result-${order.orderID}`)).toMatchAriaSnapshot(`
             - img
             - paragraph: Pedido
@@ -158,9 +151,10 @@ test.describe('Order check', () => {
         }
 
         // Act
-        await page.getByRole('textbox', { name: 'Número do Pedido' }).fill(order.orderID);
-        await page.getByRole('button', { name: 'Buscar Pedido' }).click();
+        const orderLookupPage = new OrderLookupPage(page)
+        await orderLookupPage.searchOrder(order.orderID)
 
+        // Assert
         await expect(page.getByTestId(`order-result-${order.orderID}`)).toMatchAriaSnapshot(`
             - img
             - paragraph: Pedido
@@ -206,8 +200,8 @@ test.describe('Order check', () => {
         const orderNotFound = generateOrderId()
 
         // Act
-        await page.getByRole('textbox', { name: 'Número do Pedido' }).fill(orderNotFound);
-        await page.getByRole('button', { name: 'Buscar Pedido' }).click();
+        const orderLookupPage = new OrderLookupPage(page)
+        await orderLookupPage.searchOrder(orderNotFound)
 
         // Assert
         // Snapshot locator strategy
