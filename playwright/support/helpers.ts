@@ -1,10 +1,13 @@
-export function generateOrderId() {
-    const alphanumeric = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+export function generateOrderCode() {
+    const prefix = 'VLO';
 
-    const randomFrom = (chars, length) =>
-        Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let randomPart = '';
 
-    const suffix = randomFrom(alphanumeric, 6);
+    for (let i = 0; i < 6; i++) {
+        const randomIndex = Math.floor(Math.random() * chars.length);
+        randomPart += chars[randomIndex];
+    }
 
-    return `VLO-${suffix}`;
+    return `${prefix}-${randomPart}`;
 }
