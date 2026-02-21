@@ -1,25 +1,28 @@
-import { test, expect } from '@playwright/test'
+import { test } from '@playwright/test'
 
 import { generateOrderCode } from '../support/helpers'
-
+import { NavBar } from '../support/components/NavBar'
+import { LandingPage } from '../support/pages/LandingPage'
 import { OrderLookupPage, type OrderDetails } from '../support/pages/OrderLookupPage'
 
 /// AAA - Arrange, Act, Assert
 
 test.describe('Order check', () => {
 
-  test.beforeEach(async ({ page }) => {
-    // Arrange
-    await page.goto('http://localhost:5173/')
-    await expect(page.getByTestId('hero-section').getByRole('heading')).toContainText('Velô Sprint')
+  let orderLookupPage: OrderLookupPage
 
-    await page.getByRole('link', { name: 'Consultar Pedido' }).click()
-    await expect(page.getByRole('heading')).toContainText('Consultar Pedido')
+  test.beforeEach(async ({ page }) => {
+    const landingPage = new LandingPage(page)
+    await landingPage.goto()
+
+    // Doesn't need instantiation if it's being used only once
+    await new NavBar(page).clickConsultarPedido()
+
+    orderLookupPage = new OrderLookupPage(page)
+    orderLookupPage.verifyPageLoaded()
   })
 
-  test('check approved order', async ({ page }) => {
-
-    // Test Data
+  test('check approved order', async () => {
     const order: OrderDetails = {
       number: 'VLO-5QGHJX',
       status: 'APROVADO',
@@ -32,21 +35,15 @@ test.describe('Order check', () => {
       payment: 'À Vista'
     }
 
-    // Act  
-    const orderLookupPage = new OrderLookupPage(page)
     await orderLookupPage.searchOrder(order.number)
 
-    // Assert
     await orderLookupPage.validateOrderDetails(order)
 
-    // Validação do badge de status encapsulada no Page Object
     await orderLookupPage.validateStatusBadge(order.status)
 
   })
 
-  test('check disapproved order', async ({ page }) => {
-
-    // Test Data
+  test('check disapproved order', async () => {
     const order: OrderDetails = {
       number: 'VLO-JMXE4O',
       status: 'REPROVADO',
@@ -59,20 +56,14 @@ test.describe('Order check', () => {
       payment: 'À Vista'
     }
 
-    // Act  
-    const orderLookupPage = new OrderLookupPage(page)
     await orderLookupPage.searchOrder(order.number)
 
-    // Assert
     await orderLookupPage.validateOrderDetails(order)
 
-    // Validação do badge de status encapsulada no Page Object
     await orderLookupPage.validateStatusBadge(order.status)
   })
 
-  test('check in analysis order', async ({ page }) => {
-
-    // Test Data
+  test('check in analysis order', async () => {
     const order: OrderDetails = {
       number: 'VLO-FI4H5T',
       status: 'EM_ANALISE',
@@ -85,33 +76,27 @@ test.describe('Order check', () => {
       payment: 'À Vista'
     }
 
-    // Act  
-    const orderLookupPage = new OrderLookupPage(page)
     await orderLookupPage.searchOrder(order.number)
 
-    // Assert
     await orderLookupPage.validateOrderDetails(order)
 
-    // Validação do badge de status encapsulada no Page Object
     await orderLookupPage.validateStatusBadge(order.status)
   })
 
-  test('check not found message when order is in expected format', async ({ page }) => {
+  test('check not found message when order is in expected format', async () => {
 
     const order = generateOrderCode()
 
-    const orderLookupPage = new OrderLookupPage(page)
     await orderLookupPage.searchOrder(order)
-
 
     await orderLookupPage.validateOrderNotFound()
 
   })
 
-  test('check not found message when order is NOT in expected format', async ({ page }) => {
+  test('check not found message when order is NOT in expected format', async () => {
 
-    const orderLookupPage = new OrderLookupPage(page)
     await orderLookupPage.searchOrder('ABC123')
+
     await orderLookupPage.validateOrderNotFound()
 
   })
