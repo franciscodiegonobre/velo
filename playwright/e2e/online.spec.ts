@@ -1,7 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/fixtures';
 
 test('webapp should be online', async ({ page }) => {
-  await page.goto('http://localhost:5173');
+  await page.goto('/');
 
   await expect(page).toHaveTitle(/Velô by Papito/);
 }); 

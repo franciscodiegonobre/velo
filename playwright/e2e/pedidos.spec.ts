@@ -1,28 +1,15 @@
-import { test } from '@playwright/test'
-
 import { generateOrderCode } from '../support/helpers'
-import { NavBar } from '../support/components/NavBar'
-import { LandingPage } from '../support/pages/LandingPage'
-import { OrderLookupPage, type OrderDetails } from '../support/pages/OrderLookupPage'
+import { test } from '../support/fixtures'
+import type { OrderDetails } from '../support/actions/orderLookupActions'
 
 /// AAA - Arrange, Act, Assert
 
 test.describe('Order check', () => {
-
-  let orderLookupPage: OrderLookupPage
-
-  test.beforeEach(async ({ page }) => {
-    const landingPage = new LandingPage(page)
-    await landingPage.goto()
-
-    // Doesn't need instantiation if it's being used only once
-    await new NavBar(page).clickConsultarPedido()
-
-    orderLookupPage = new OrderLookupPage(page)
-    orderLookupPage.verifyPageLoaded()
+  test.beforeEach(async ({ app }) => {
+    await app.orderLookup.open()
   })
 
-  test('check approved order', async () => {
+  test('check approved order', async ({ app }) => {
     const order: OrderDetails = {
       number: 'VLO-5QGHJX',
       status: 'APROVADO',
@@ -35,15 +22,13 @@ test.describe('Order check', () => {
       payment: 'À Vista'
     }
 
-    await orderLookupPage.searchOrder(order.number)
-
-    await orderLookupPage.validateOrderDetails(order)
-
-    await orderLookupPage.validateStatusBadge(order.status)
+    await app.orderLookup.searchOrder(order.number)
+    await app.orderLookup.validateOrderDetails(order)
+    await app.orderLookup.validateStatusBadge(order.status)
 
   })
 
-  test('check disapproved order', async () => {
+  test('check disapproved order', async ({ app }) => {
     const order: OrderDetails = {
       number: 'VLO-JMXE4O',
       status: 'REPROVADO',
@@ -56,14 +41,12 @@ test.describe('Order check', () => {
       payment: 'À Vista'
     }
 
-    await orderLookupPage.searchOrder(order.number)
-
-    await orderLookupPage.validateOrderDetails(order)
-
-    await orderLookupPage.validateStatusBadge(order.status)
+    await app.orderLookup.searchOrder(order.number)
+    await app.orderLookup.validateOrderDetails(order)
+    await app.orderLookup.validateStatusBadge(order.status)
   })
 
-  test('check in analysis order', async () => {
+  test('check in analysis order', async ({ app }) => {
     const order: OrderDetails = {
       number: 'VLO-FI4H5T',
       status: 'EM_ANALISE',
@@ -76,28 +59,26 @@ test.describe('Order check', () => {
       payment: 'À Vista'
     }
 
-    await orderLookupPage.searchOrder(order.number)
-
-    await orderLookupPage.validateOrderDetails(order)
-
-    await orderLookupPage.validateStatusBadge(order.status)
+    await app.orderLookup.searchOrder(order.number)
+    await app.orderLookup.validateOrderDetails(order)
+    await app.orderLookup.validateStatusBadge(order.status)
   })
 
-  test('check not found message when order is in expected format', async () => {
+  test('check not found message when order is in expected format', async ({ app }) => {
 
     const order = generateOrderCode()
 
-    await orderLookupPage.searchOrder(order)
+    await app.orderLookup.searchOrder(order)
 
-    await orderLookupPage.validateOrderNotFound()
+    await app.orderLookup.validateOrderNotFound()
 
   })
 
-  test('check not found message when order is NOT in expected format', async () => {
+  test('check not found message when order is NOT in expected format', async ({ app }) => {
 
-    await orderLookupPage.searchOrder('ABC123')
+    await app.orderLookup.searchOrder('ABC123')
 
-    await orderLookupPage.validateOrderNotFound()
+    await app.orderLookup.validateOrderNotFound()
 
   })
 })
