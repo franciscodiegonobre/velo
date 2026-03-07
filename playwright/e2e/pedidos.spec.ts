@@ -1,5 +1,5 @@
 import { generateOrderCode } from '../support/helpers'
-import { test } from '../support/fixtures'
+import { test, expect } from '../support/fixtures'
 import type { OrderDetails } from '../support/actions/orderLookupActions'
 
 /// AAA - Arrange, Act, Assert
@@ -80,5 +80,17 @@ test.describe('Order check', () => {
 
     await app.orderLookup.validateOrderNotFound()
 
+  })
+
+  test('keep the search button disabled if the order is empty or has spaces', async ({ app }) => {
+
+    const button = app.orderLookup.elements.searchButton
+    await expect(button).toBeDisabled()
+
+    await app.orderLookup.elements.orderInput.fill(' ')
+    await expect(button).toBeDisabled()
+
+    await app.orderLookup.elements.orderInput.fill('VLO-ABC123')
+    await expect(button).toBeEnabled()
   })
 })
