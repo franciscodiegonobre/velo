@@ -42,8 +42,8 @@
     "@supabase/supabase-js": "^2.89.0",
     "@tanstack/react-query": "^5.83.0",
     "@types/react-input-mask": "^3.0.6",
-    "baseline-browser-mapping": "^2.9.11",
-    "caniuse-lite": "^1.0.30001761",
+    "baseline-browser-mapping": "^2.10.42",
+    "caniuse-lite": "^1.0.30001803",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -68,21 +68,25 @@
     "zustand": "^4.5.7"
   },
   "overrides": {
-    "caniuse-lite": "^1.0.30001761"
+    "caniuse-lite": "^1.0.30001803"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
     "@playwright/test": "^1.58.0",
     "@tailwindcss/typography": "^0.5.16",
     "@types/node": "^22.16.5",
+    "@types/pg": "^8.20.0",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react-swc": "^3.11.0",
     "autoprefixer": "^10.4.21",
+    "dotenv": "^17.4.2",
     "eslint": "^9.32.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
+    "kysely": "^0.29.3",
+    "pg": "^8.22.0",
     "postcss": "^8.5.6",
     "supabase": "^2.74.1",
     "tailwindcss": "^3.4.17",

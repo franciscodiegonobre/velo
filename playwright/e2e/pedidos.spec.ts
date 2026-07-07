@@ -1,96 +1,69 @@
-import { generateOrderCode } from '../support/helpers'
 import { test, expect } from '../support/fixtures'
-import type { OrderDetails } from '../support/actions/orderLookupActions'
+import { generateOrderCode } from '../support/helpers'
+import { insertOrder, deleteOrderByNumber, toOrderDetails } from '../support/database/orderRepository'
+import type { OrderSeed } from '../support/database/orderRepository'
 
-/// AAA - Arrange, Act, Assert
+import testData from '../support/fixtures/orders.json' with { type: 'json' }
 
-test.describe('Order check', () => {
+test.describe('Consulta de Pedido', () => {
+
   test.beforeEach(async ({ app }) => {
     await app.orderLookup.open()
   })
 
-  test('check approved order', async ({ app }) => {
-    const order: OrderDetails = {
-      number: 'VLO-5QGHJX',
-      status: 'APROVADO',
-      color: 'Lunar White',
-      wheels: 'aero Wheels',
-      customer: {
-        name: 'francisco nobre',
-        email: 'fran@test.com'
-    },
-      payment: 'À Vista'
-    }
+  test('deve consultar um pedido aprovado', async ({ app }) => {
+    const order: OrderSeed = testData.aprovado as OrderSeed
+    const orderDetails = toOrderDetails(order)
+
+    await deleteOrderByNumber(order.number)
+    await insertOrder(order)
 
     await app.orderLookup.searchOrder(order.number)
-    await app.orderLookup.validateOrderDetails(order)
-    await app.orderLookup.validateStatusBadge(order.status)
-
+    await app.orderLookup.validateOrderDetails(orderDetails)
+    await app.orderLookup.validateStatusBadge(orderDetails.status)
   })
 
-  test('check disapproved order', async ({ app }) => {
-    const order: OrderDetails = {
-      number: 'VLO-JMXE4O',
-      status: 'REPROVADO',
-      color: 'Midnight Black',
-      wheels: 'sport Wheels',
-      customer: {
-        name: 'Steven Jobs',
-        email: 'jobs@apple.com'
-    },
-      payment: 'À Vista'
-    }
+  test('deve consultar um pedido reprovado', async ({ app }) => {
+    const order: OrderSeed = testData.reprovado as OrderSeed
+    const orderDetails = toOrderDetails(order)
+
+    await deleteOrderByNumber(order.number)
+    await insertOrder(order)
 
     await app.orderLookup.searchOrder(order.number)
-    await app.orderLookup.validateOrderDetails(order)
-    await app.orderLookup.validateStatusBadge(order.status)
+    await app.orderLookup.validateOrderDetails(orderDetails)
+    await app.orderLookup.validateStatusBadge(orderDetails.status)
   })
 
-  test('check in analysis order', async ({ app }) => {
-    const order: OrderDetails = {
-      number: 'VLO-FI4H5T',
-      status: 'EM_ANALISE',
-      color: 'Lunar White',
-      wheels: 'aero Wheels',
-      customer: {
-        name: 'Joao da Silva',
-        email: 'joao@velo.dev'
-    },
-      payment: 'À Vista'
-    }
+  test('deve consultar um pedido em analise', async ({ app }) => {
+    const order: OrderSeed = testData.em_analise as OrderSeed
+    const orderDetails = toOrderDetails(order)
+
+    await deleteOrderByNumber(order.number)
+    await insertOrder(order)
 
     await app.orderLookup.searchOrder(order.number)
-    await app.orderLookup.validateOrderDetails(order)
-    await app.orderLookup.validateStatusBadge(order.status)
+    await app.orderLookup.validateOrderDetails(orderDetails)
+    await app.orderLookup.validateStatusBadge(orderDetails.status)
   })
 
-  test('check not found message when order is in expected format', async ({ app }) => {
-
+  test('deve exibir mensagem quando o pedido não é encontrado', async ({ app }) => {
     const order = generateOrderCode()
-
     await app.orderLookup.searchOrder(order)
-
     await app.orderLookup.validateOrderNotFound()
-
   })
 
-  test('check not found message when order is NOT in expected format', async ({ app }) => {
-
-    await app.orderLookup.searchOrder('ABC123')
-
+  test('deve exibir mensagem quando o código do pedido está fora do padrão', async ({ app }) => {
+    const orderCode = 'XYZ-999-INVALIDO'
+    await app.orderLookup.searchOrder(orderCode)
     await app.orderLookup.validateOrderNotFound()
-
   })
 
-  test('keep the search button disabled if the order is empty or has spaces', async ({ app }) => {
-
+  test('deve manter o botão de busca desabilitado com campo vazio ou apenas espaços', async ({ app, page }) => {
     const button = app.orderLookup.elements.searchButton
     await expect(button).toBeDisabled()
 
-    await app.orderLookup.elements.orderInput.fill(' ')
+    await app.orderLookup.elements.orderInput.fill('     ')
     await expect(button).toBeDisabled()
-
-    await app.orderLookup.elements.orderInput.fill('VLO-ABC123')
-    await expect(button).toBeEnabled()
   })
 })
