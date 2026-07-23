@@ -1,100 +1,123 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/fixtures'
 
-test.describe('Checkout - validações (CT04)', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/order');
-    await expect(page.getByRole('heading', { name: 'Finalizar Pedido' })).toBeVisible();
-  });
+test.describe('Checkout', () => {
 
-  test('passo 1: campos em branco exibem erros obrigatórios', async ({ page }) => {
-    const submit = page.getByRole('button', { name: 'Confirmar Pedido' });
-    const nameAlert = page.locator('//label[text()="Nome"]/..//p');
-    const surnameAlert = page.locator('//label[text()="Sobrenome"]/..//p');
-    const emailAlert = page.locator('//label[text()="Email"]/..//p');
-    const phoneAlert = page.locator('//label[text()="Telefone"]/..//p');
-    const cpfAlert = page.locator('//label[text()="CPF"]/..//p');
-    const storeAlert = page.locator('//label[text()="Loja para Retirada"]/..//p');
-    const termsAlert = page.locator('//label[@for="terms"]/following-sibling::p');
 
-    await submit.click();
 
-    await expect(nameAlert).toHaveText('Nome deve ter pelo menos 2 caracteres');
-    await expect(surnameAlert).toHaveText('Sobrenome deve ter pelo menos 2 caracteres');
-    await expect(emailAlert).toHaveText('Email inválido');
-    await expect(phoneAlert).toHaveText('Telefone inválido');
-    await expect(cpfAlert).toHaveText('CPF inválido');
-    await expect(storeAlert).toHaveText('Selecione uma loja');
-    await expect(termsAlert).toHaveText('Aceite os termos');
-  });
+  test.describe('Validações de campos obrigatórios', () => {
 
-  test('passo 2: nome e sobrenome com 1 letra', async ({ page }) => {
-    const submit = page.getByRole('button', { name: 'Confirmar Pedido' });
-    const nome = page.getByTestId('checkout-name');
-    const sobrenome = page.getByTestId('checkout-surname');
-    const nameAlert = page.locator('//label[text()="Nome"]/..//p');
-    const surnameAlert = page.locator('//label[text()="Sobrenome"]/..//p');
+    let alerts: any
 
-    await nome.fill('A');
-    await sobrenome.fill('B');
-    await submit.click();
+    test.beforeEach(async ({ page, app }) => {
+      await page.goto('/order')
+      await expect(page.getByRole('heading', { name: 'Finalizar Pedido' })).toBeVisible()
 
-    await expect(nameAlert).toHaveText('Nome deve ter pelo menos 2 caracteres');
-    await expect(surnameAlert).toHaveText('Sobrenome deve ter pelo menos 2 caracteres');
-  });
+      alerts = app.checkout.elements.alerts
+    })
 
-  test('passo 3: e-mail inválido', async ({ page }) => {
-    const submit = page.getByRole('button', { name: 'Confirmar Pedido' });
-    const nome = page.getByTestId('checkout-name');
-    const sobrenome = page.getByTestId('checkout-surname');
-    const email = page.getByTestId('checkout-email');
-    const emailAlert = page.locator('//label[text()="Email"]/..//p');
 
-    await nome.fill('João');
-    await sobrenome.fill('Silva');
-    await email.fill('cliente@.com');
-    await submit.click();
+    test('deve validar obrigatoriedade de todos os campos em branco', async ({ app }) => {
+      // Act
+      await app.checkout.submit()
 
-    await expect(emailAlert).toHaveText('Email inválido');
-  });
+      // Assert
+      await expect(alerts.name).toHaveText('Nome deve ter pelo menos 2 caracteres')
+      await expect(alerts.lastname).toHaveText('Sobrenome deve ter pelo menos 2 caracteres')
+      await expect(alerts.email).toHaveText('Email inválido')
+      await expect(alerts.phone).toHaveText('Telefone inválido')
+      await expect(alerts.document).toHaveText('CPF inválido')
+      await expect(alerts.store).toHaveText('Selecione uma loja')
+      await expect(alerts.terms).toHaveText('Aceite os termos')
+    })
 
-  test('passo 4: CPF inválido', async ({ page }) => {
-    const submit = page.getByRole('button', { name: 'Confirmar Pedido' });
-    const nome = page.getByTestId('checkout-name');
-    const sobrenome = page.getByTestId('checkout-surname');
-    const email = page.getByTestId('checkout-email');
-    const cpf = page.getByTestId('checkout-cpf');
-    const cpfAlert = page.locator('//label[text()="CPF"]/..//p');
+    test('deve validar limite mínimo de caracteres para Nome e Sobrenome', async ({ app }) => {
 
-    await nome.fill('João');
-    await sobrenome.fill('Silva');
-    await email.fill('cliente@.com');
-    await cpf.fill('123');
-    await submit.click();
+      const customer = {
+        name: 'A',
+        lastname: 'B',
+        email: 'papito@teste.com',
+        document: '00000014141',
+        phone: '(11) 99999-9999'
+      }
 
-    await expect(cpfAlert).toHaveText('CPF inválido');
-  });
+      // Arrange
+      await app.checkout.fillCustomerlData(customer)
+      await app.checkout.selectStore('Velô Paulista')
+      await app.checkout.acceptTerms()
 
-  test('passo 5: termos obrigatórios', async ({ page }) => {
-    const submit = page.getByRole('button', { name: 'Confirmar Pedido' });
-    const nome = page.getByTestId('checkout-name');
-    const sobrenome = page.getByTestId('checkout-surname');
-    const email = page.getByTestId('checkout-email');
-    const telefone = page.getByTestId('checkout-phone');
-    const cpf = page.getByTestId('checkout-cpf');
-    const loja = page.getByTestId('checkout-store');
-    const termos = page.getByTestId('checkout-terms');
-    const termsAlert = page.locator('//label[@for="terms"]/following-sibling::p');
+      // Act
+      await app.checkout.submit()
 
-    await nome.fill('João');
-    await sobrenome.fill('Silva');
-    await email.fill('joao.silva@email.com');
-    await telefone.fill('(11) 99999-9999');
-    await cpf.fill('529.982.247-25');
-    await loja.click();
-    await page.getByRole('option', { name: /Velô Paulista/ }).click();
-    await expect(termos).not.toBeChecked();
-    await submit.click();
+      // Assert
+      await expect(alerts.name).toHaveText('Nome deve ter pelo menos 2 caracteres')
+      await expect(alerts.lastname).toHaveText('Sobrenome deve ter pelo menos 2 caracteres')
+    })
 
-    await expect(termsAlert).toHaveText('Aceite os termos');
-  });
-});
+    test('deve exibir erro para e-mail com formato inválido', async ({ app }) => {
+      const customer = {
+        name: 'Fernando',
+        lastname: 'Papito',
+        email: 'papito@.com',
+        document: '00000014141',
+        phone: '(11) 99999-9999'
+      }
+
+      // Arrange
+      await app.checkout.fillCustomerlData(customer)
+      await app.checkout.selectStore('Velô Paulista')
+      await app.checkout.acceptTerms()
+
+      // Act
+      await app.checkout.submit()
+
+      // Assert
+      await expect(alerts.email).toHaveText('Email inválido')
+    })
+
+    test('deve exibir erro para CPF inválido', async ({ app }) => {
+
+      const customer = {
+        name: 'Fernando',
+        lastname: 'Papito',
+        email: 'papito@test.com',
+        document: '00000014199',
+        phone: '(11) 99999-9999'
+      }
+
+      // Arrange
+      await app.checkout.fillCustomerlData(customer)
+      await app.checkout.selectStore('Velô Paulista')
+      await app.checkout.acceptTerms()
+
+      // Act
+      await app.checkout.submit()
+
+      // Assert
+      await expect(alerts.document).toHaveText('CPF inválido')
+    })
+
+    test('deve exigir o aceite dos termos ao finalizar com dados válidos', async ({ app }) => {
+
+      const customer = {
+        name: 'Fernando',
+        lastname: 'Papito',
+        email: 'papito@test.com',
+        document: '00000014199',
+        phone: '(11) 99999-9999'
+      }
+
+      // Arrange
+      await app.checkout.fillCustomerlData(customer)
+      await app.checkout.selectStore('Velô Paulista')
+
+      await expect(app.checkout.elements.terms).not.toBeChecked()
+
+      // Act
+      await app.checkout.submit()
+
+      // Assert
+      await expect(alerts.terms).toHaveText('Aceite os termos')
+    })
+  })
+    
+})
