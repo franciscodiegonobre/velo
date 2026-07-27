@@ -1,4 +1,5 @@
 import { test, expect } from '../support/fixtures'
+import { deleteOrderByEmail } from '../support/database/orderRepository'
 
 test.describe('Checkout', () => {
 
@@ -119,5 +120,54 @@ test.describe('Checkout', () => {
       await expect(alerts.terms).toHaveText('Aceite os termos')
     })
   })
-    
+
+  test.describe('Pagamento à vista - fluxo feliz', () => {
+    const customerEmail = 'mariana.oliveira@velo.dev'
+
+    test.afterEach(async () => {
+      await deleteOrderByEmail(customerEmail)
+    })
+
+    test('deve criar pedido aprovado com pagamento à vista', async ({ app }) => {
+      const checkoutData = {
+        customer: {
+          name: 'Mariana',
+          lastname: 'Oliveira',
+          email: customerEmail,
+          document: '780.228.290-05',
+          phone: '(11) 98765-4321',
+        },
+        store: 'Velô Paulista',
+        storeFullName: 'Velô Paulista - Av. Paulista, 1000',
+        totalPrice: 'R$ 40.000,00',
+        expectedStatus: 'Pedido Aprovado!',
+      }
+
+      // Arrange
+      await app.configurator.open()
+      await app.configurator.validateDefaultConfiguratorState()
+      await app.configurator.goToCheckout()
+      await app.checkout.expectLoaded()
+
+      // Act
+      await app.checkout.fillCustomerlData(checkoutData.customer)
+      await app.checkout.selectStore(checkoutData.store)
+      await app.checkout.expectNoFieldErrors()
+      await app.checkout.selectPaymentMethod('À Vista')
+      await app.checkout.expectSummaryTotal(checkoutData.totalPrice)
+      await app.checkout.expectAvistaTotal(checkoutData.totalPrice)
+      await app.checkout.acceptTerms()
+      await app.checkout.submit()
+
+      // Assert
+      await app.checkout.expectSuccessPage({
+        status: checkoutData.expectedStatus,
+        customerName: `${checkoutData.customer.name} ${checkoutData.customer.lastname}`,
+        email: checkoutData.customer.email,
+        store: checkoutData.storeFullName,
+        totalPrice: checkoutData.totalPrice,
+      })
+    })
+  })
+
 })

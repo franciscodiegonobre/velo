@@ -56,5 +56,10 @@ export function createConfiguratorActions(page: Page) {
       await this.validateTotalPrice('R$ 40.000,00')
       await this.validateCarPreview('glacier-blue', 'aero')
     },
+
+    async goToCheckout() {
+      await page.getByTestId('checkout-button').click()
+      await expect(page).toHaveURL(/\/order$/)
+    },
   }
 }

@@ -68,7 +68,41 @@ export function createCheckoutActions(page: Page) {
     async expectResult(status: string) {
       await expect(page).toHaveURL(/\/success/)
       await expect(page.getByRole('heading', { name: status })).toBeVisible()
-    }
+    },
+
+    async expectNoFieldErrors() {
+      await expect(alerts.name).not.toBeVisible()
+      await expect(alerts.lastname).not.toBeVisible()
+      await expect(alerts.email).not.toBeVisible()
+      await expect(alerts.phone).not.toBeVisible()
+      await expect(alerts.document).not.toBeVisible()
+      await expect(alerts.store).not.toBeVisible()
+      await expect(alerts.terms).not.toBeVisible()
+    },
+
+    async expectAvistaTotal(price: string) {
+      await expect(page.getByTestId('payment-avista')).toContainText(price)
+    },
+
+    async expectSubmitProcessing() {
+      await expect(page.getByRole('button', { name: 'Processando...' })).toBeVisible()
+    },
+
+    async expectSuccessPage(data: {
+      status: string
+      customerName: string
+      email: string
+      store: string
+      totalPrice: string
+    }) {
+      await expect(page).toHaveURL(/\/success/)
+      await expect(page.getByTestId('success-status')).toHaveText(data.status)
+      await expect(page.getByTestId('order-id')).toHaveText(/^VLO-[A-Z0-9]{6}$/)
+      await expect(page.getByText(data.customerName)).toBeVisible()
+      await expect(page.getByText(data.email)).toBeVisible()
+      await expect(page.getByText(data.store)).toBeVisible()
+      await expect(page.getByText(data.totalPrice)).toBeVisible()
+    },
 
   }
 }
