@@ -141,6 +141,7 @@ test.describe('Checkout', () => {
         storeFullName: 'Velô Paulista - Av. Paulista, 1000',
         totalPrice: 'R$ 40.000,00',
         expectedStatus: 'Pedido Aprovado!',
+        paymentMethod: 'À Vista',
       }
 
       // Arrange
@@ -153,7 +154,7 @@ test.describe('Checkout', () => {
       await app.checkout.fillCustomerlData(checkoutData.customer)
       await app.checkout.selectStore(checkoutData.store)
       await app.checkout.expectNoFieldErrors()
-      await app.checkout.selectPaymentMethod('À Vista')
+      await app.checkout.selectPaymentMethod(checkoutData.paymentMethod)
       await app.checkout.expectSummaryTotal(checkoutData.totalPrice)
       await app.checkout.expectAvistaTotal(checkoutData.totalPrice)
       await app.checkout.acceptTerms()
