@@ -122,18 +122,13 @@ test.describe('Checkout', () => {
   })
 
   test.describe('Pagamento à vista - fluxo feliz', () => {
-    const customerEmail = 'mariana.oliveira@velo.dev'
-
-    test.afterEach(async () => {
-      await deleteOrderByEmail(customerEmail)
-    })
 
     test('deve criar pedido aprovado com pagamento à vista', async ({ app }) => {
       const checkoutData = {
         customer: {
           name: 'Mariana',
           lastname: 'Oliveira',
-          email: customerEmail,
+          email: 'mariana.oliveira@velo.dev',
           document: '780.228.290-05',
           phone: '(11) 98765-4321',
         },
@@ -143,6 +138,8 @@ test.describe('Checkout', () => {
         expectedStatus: 'Pedido Aprovado!',
         paymentMethod: 'À Vista',
       }
+
+      await deleteOrderByEmail(checkoutData.customer.email)
 
       // Arrange
       await app.configurator.open()
