@@ -166,6 +166,60 @@ test.describe('Checkout', () => {
         totalPrice: checkoutData.totalPrice,
       })
     })
+
+    test('deve aprovar automaticamente o crédito quando o score do CPF for maior que 700 no financiamento.', async ({ app, page }) => {
+      const checkoutData = {
+        customer: {
+          name: 'Steve',
+          lastname: 'Jobs',
+          email: 'steve.jobs@velo.dev',
+          document: '65493881047',
+          phone: '(11) 98765-4321',
+        },
+        store: 'Velô Paulista',
+        storeFullName: 'Velô Paulista - Av. Paulista, 1000',
+        totalPrice: 'R$ 40.800,00',
+        expectedStatus: 'Pedido Aprovado!',
+        paymentMethod: 'Financiamento',
+      }
+      
+      await deleteOrderByEmail(checkoutData.customer.email)
+
+      await page.route('**/functions/v1/credit-analysis', async route => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            status: 'Done',
+            score: 710,
+          }),
+        })
+      })
+
+      // Arrange
+      await app.configurator.open()
+      await app.configurator.validateDefaultConfiguratorState()
+      await app.configurator.goToCheckout()
+      await app.checkout.expectLoaded()
+
+      // Act
+      await app.checkout.fillCustomerlData(checkoutData.customer)
+      await app.checkout.selectStore(checkoutData.store)
+      await app.checkout.expectNoFieldErrors()
+      await app.checkout.selectPaymentMethod(checkoutData.paymentMethod)
+      await app.checkout.expectSummaryTotal(checkoutData.totalPrice)
+      await app.checkout.acceptTerms()
+      await app.checkout.submit()
+
+      // Assert
+      await app.checkout.expectSuccessPage({
+        status: checkoutData.expectedStatus,
+        customerName: `${checkoutData.customer.name} ${checkoutData.customer.lastname}`,
+        email: checkoutData.customer.email,
+        store: checkoutData.storeFullName,
+        totalPrice: checkoutData.totalPrice,
+      })
+    })
   })
 
 })
