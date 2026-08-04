@@ -39,3 +39,7 @@ docs/db-password.txt
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Supabase local CLI state
+/supabase/.temp/
+/supabase/config.toml
