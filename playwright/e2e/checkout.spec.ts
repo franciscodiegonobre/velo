@@ -182,7 +182,7 @@ test.describe('Checkout', () => {
         expectedStatus: 'Pedido Aprovado!',
         paymentMethod: 'Financiamento',
       }
-      
+
       await deleteOrderByEmail(checkoutData.customer.email)
 
       await page.route('**/functions/v1/credit-analysis', async route => {
@@ -272,6 +272,118 @@ test.describe('Checkout', () => {
         email: checkoutData.customer.email,
         store: checkoutData.storeFullName,
         totalPrice: checkoutData.totalPrice,
+      })
+    })
+
+    test('deve reprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento sem entrada.', async ({ app, page }) => {
+      const checkoutData = {
+        customer: {
+          name: 'Carlos',
+          lastname: 'Silva',
+          email: 'carlos.silva.sem.entrada@velo.dev',
+          document: '12345678909',
+          phone: '(11) 98765-4321',
+        },
+        store: 'Velô Paulista',
+        storeFullName: 'Velô Paulista - Av. Paulista, 1000',
+        totalPrice: 'R$ 40.800,00',
+        expectedStatus: 'Crédito Reprovado',
+        paymentMethod: 'Financiamento',
+      }
+
+      await deleteOrderByEmail(checkoutData.customer.email)
+
+      await page.route('**/functions/v1/credit-analysis', async route => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            status: 'Done',
+            score: 500,
+          }),
+        })
+      })
+
+      // Arrange
+      await app.configurator.open()
+      await app.configurator.validateDefaultConfiguratorState()
+      await app.configurator.goToCheckout()
+      await app.checkout.expectLoaded()
+
+      // Act
+      await app.checkout.fillCustomerlData(checkoutData.customer)
+      await app.checkout.selectStore(checkoutData.store)
+      await app.checkout.expectNoFieldErrors()
+      await app.checkout.selectPaymentMethod(checkoutData.paymentMethod)
+      await app.checkout.expectSummaryTotal(checkoutData.totalPrice)
+      await app.checkout.acceptTerms()
+      await app.checkout.submit()
+
+      // Assert
+      await app.checkout.expectSuccessPage({
+        status: checkoutData.expectedStatus,
+        customerName: `${checkoutData.customer.name} ${checkoutData.customer.lastname}`,
+        email: checkoutData.customer.email,
+        store: checkoutData.storeFullName,
+        totalPrice: checkoutData.totalPrice,
+      })
+    })
+
+    test('deve reprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento com entrada menor que 50%.', async ({ app, page }) => {
+      const checkoutData = {
+        customer: {
+          name: 'Bruno',
+          lastname: 'Almeida',
+          email: 'bruno.almeida.entrada@velo.dev',
+          document: '98765432100',
+          phone: '(11) 98765-4321',
+        },
+        store: 'Velô Paulista',
+        storeFullName: 'Velô Paulista - Av. Paulista, 1000',
+        totalPrice: 'R$ 30.600,00',
+        totalFinalPrice: 'R$ 40.600,00',
+        expectedStatus: 'Crédito Reprovado',
+        paymentMethod: 'Financiamento',
+        downPayment: '10000',
+      }
+
+      await deleteOrderByEmail(checkoutData.customer.email)
+
+      await page.route('**/functions/v1/credit-analysis', async route => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            status: 'Done',
+            score: 450,
+          }),
+        })
+      })
+
+      // Arrange
+      await app.configurator.open()
+      await app.configurator.validateDefaultConfiguratorState()
+      await app.configurator.goToCheckout()
+      await app.checkout.expectLoaded()
+
+      // Act
+      await app.checkout.fillCustomerlData(checkoutData.customer)
+      await app.checkout.selectStore(checkoutData.store)
+      await app.checkout.expectNoFieldErrors()
+      await app.checkout.selectPaymentMethod(checkoutData.paymentMethod)
+      await app.checkout.fillDownPayment(checkoutData.downPayment)
+
+      await app.checkout.expectSummaryTotal(checkoutData.totalPrice)
+      await app.checkout.acceptTerms()
+      await app.checkout.submit()
+
+      // Assert
+      await app.checkout.expectSuccessPage({
+        status: checkoutData.expectedStatus,
+        customerName: `${checkoutData.customer.name} ${checkoutData.customer.lastname}`,
+        email: checkoutData.customer.email,
+        store: checkoutData.storeFullName,
+        totalPrice: checkoutData.totalFinalPrice,
       })
     })
   })
