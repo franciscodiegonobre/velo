@@ -167,7 +167,7 @@ test.describe('Checkout', () => {
       })
     })
 
-    test('deve aprovar automaticamente o crédito quando o score do CPF for maior que 700 no financiamento.', async ({ app, page }) => {
+    test('deve aprovar automaticamente o crédito quando o score do CPF for maior que 700 no financiamento.', async ({ app }) => {
       const checkoutData = {
         customer: {
           name: 'Steve',
@@ -181,35 +181,24 @@ test.describe('Checkout', () => {
         totalPrice: 'R$ 40.800,00',
         expectedStatus: 'Pedido Aprovado!',
         paymentMethod: 'Financiamento',
+        creditScore: 710,
       }
 
       await deleteOrderByEmail(checkoutData.customer.email)
 
-      await page.route('**/functions/v1/credit-analysis', async route => {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            status: 'Done',
-            score: 710,
-          }),
-        })
-      })
+      await app.checkout.mockCreditAnalysis(checkoutData.creditScore)
 
       // Arrange
-      await app.configurator.open()
-      await app.configurator.validateDefaultConfiguratorState()
-      await app.configurator.goToCheckout()
+      await app.configurator.openDefaultAndGoToCheckout()
       await app.checkout.expectLoaded()
 
       // Act
-      await app.checkout.fillCustomerlData(checkoutData.customer)
-      await app.checkout.selectStore(checkoutData.store)
-      await app.checkout.expectNoFieldErrors()
-      await app.checkout.selectPaymentMethod(checkoutData.paymentMethod)
-      await app.checkout.expectSummaryTotal(checkoutData.totalPrice)
-      await app.checkout.acceptTerms()
-      await app.checkout.submit()
+      await app.checkout.completeFinancingCheckout({
+        customer: checkoutData.customer,
+        store: checkoutData.store,
+        paymentMethod: checkoutData.paymentMethod,
+        summaryTotal: checkoutData.totalPrice,
+      })
 
       // Assert
       await app.checkout.expectSuccessPage({
@@ -221,7 +210,7 @@ test.describe('Checkout', () => {
       })
     })
 
-    test('deve manter o pedido em análise quando o score do CPF estiver entre 501 e 700 no financiamento.', async ({ app, page }) => {
+    test('deve manter o pedido em análise quando o score do CPF estiver entre 501 e 700 no financiamento.', async ({ app }) => {
       const checkoutData = {
         customer: {
           name: 'Ana',
@@ -235,35 +224,24 @@ test.describe('Checkout', () => {
         totalPrice: 'R$ 40.800,00',
         expectedStatus: 'Pedido Em Análise!',
         paymentMethod: 'Financiamento',
+        creditScore: 600,
       }
 
       await deleteOrderByEmail(checkoutData.customer.email)
 
-      await page.route('**/functions/v1/credit-analysis', async route => {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            status: 'Done',
-            score: 600,
-          }),
-        })
-      })
+      await app.checkout.mockCreditAnalysis(checkoutData.creditScore)
 
       // Arrange
-      await app.configurator.open()
-      await app.configurator.validateDefaultConfiguratorState()
-      await app.configurator.goToCheckout()
+      await app.configurator.openDefaultAndGoToCheckout()
       await app.checkout.expectLoaded()
 
       // Act
-      await app.checkout.fillCustomerlData(checkoutData.customer)
-      await app.checkout.selectStore(checkoutData.store)
-      await app.checkout.expectNoFieldErrors()
-      await app.checkout.selectPaymentMethod(checkoutData.paymentMethod)
-      await app.checkout.expectSummaryTotal(checkoutData.totalPrice)
-      await app.checkout.acceptTerms()
-      await app.checkout.submit()
+      await app.checkout.completeFinancingCheckout({
+        customer: checkoutData.customer,
+        store: checkoutData.store,
+        paymentMethod: checkoutData.paymentMethod,
+        summaryTotal: checkoutData.totalPrice,
+      })
 
       // Assert
       await app.checkout.expectSuccessPage({
@@ -275,7 +253,7 @@ test.describe('Checkout', () => {
       })
     })
 
-    test('deve reprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento sem entrada.', async ({ app, page }) => {
+    test('deve reprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento sem entrada.', async ({ app }) => {
       const checkoutData = {
         customer: {
           name: 'Carlos',
@@ -289,35 +267,24 @@ test.describe('Checkout', () => {
         totalPrice: 'R$ 40.800,00',
         expectedStatus: 'Crédito Reprovado',
         paymentMethod: 'Financiamento',
+        creditScore: 500,
       }
 
       await deleteOrderByEmail(checkoutData.customer.email)
 
-      await page.route('**/functions/v1/credit-analysis', async route => {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            status: 'Done',
-            score: 500,
-          }),
-        })
-      })
+      await app.checkout.mockCreditAnalysis(checkoutData.creditScore)
 
       // Arrange
-      await app.configurator.open()
-      await app.configurator.validateDefaultConfiguratorState()
-      await app.configurator.goToCheckout()
+      await app.configurator.openDefaultAndGoToCheckout()
       await app.checkout.expectLoaded()
 
       // Act
-      await app.checkout.fillCustomerlData(checkoutData.customer)
-      await app.checkout.selectStore(checkoutData.store)
-      await app.checkout.expectNoFieldErrors()
-      await app.checkout.selectPaymentMethod(checkoutData.paymentMethod)
-      await app.checkout.expectSummaryTotal(checkoutData.totalPrice)
-      await app.checkout.acceptTerms()
-      await app.checkout.submit()
+      await app.checkout.completeFinancingCheckout({
+        customer: checkoutData.customer,
+        store: checkoutData.store,
+        paymentMethod: checkoutData.paymentMethod,
+        summaryTotal: checkoutData.totalPrice,
+      })
 
       // Assert
       await app.checkout.expectSuccessPage({
@@ -329,7 +296,7 @@ test.describe('Checkout', () => {
       })
     })
 
-    test('deve reprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento com entrada menor que 50%.', async ({ app, page }) => {
+    test('deve reprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento com entrada menor que 50%.', async ({ app }) => {
       const checkoutData = {
         customer: {
           name: 'Bruno',
@@ -345,37 +312,25 @@ test.describe('Checkout', () => {
         expectedStatus: 'Crédito Reprovado',
         paymentMethod: 'Financiamento',
         downPayment: '10000',
+        creditScore: 450,
       }
 
       await deleteOrderByEmail(checkoutData.customer.email)
 
-      await page.route('**/functions/v1/credit-analysis', async route => {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            status: 'Done',
-            score: 450,
-          }),
-        })
-      })
+      await app.checkout.mockCreditAnalysis(checkoutData.creditScore)
 
       // Arrange
-      await app.configurator.open()
-      await app.configurator.validateDefaultConfiguratorState()
-      await app.configurator.goToCheckout()
+      await app.configurator.openDefaultAndGoToCheckout()
       await app.checkout.expectLoaded()
 
       // Act
-      await app.checkout.fillCustomerlData(checkoutData.customer)
-      await app.checkout.selectStore(checkoutData.store)
-      await app.checkout.expectNoFieldErrors()
-      await app.checkout.selectPaymentMethod(checkoutData.paymentMethod)
-      await app.checkout.fillDownPayment(checkoutData.downPayment)
-
-      await app.checkout.expectSummaryTotal(checkoutData.totalPrice)
-      await app.checkout.acceptTerms()
-      await app.checkout.submit()
+      await app.checkout.completeFinancingCheckout({
+        customer: checkoutData.customer,
+        store: checkoutData.store,
+        paymentMethod: checkoutData.paymentMethod,
+        summaryTotal: checkoutData.totalPrice,
+        downPayment: checkoutData.downPayment,
+      })
 
       // Assert
       await app.checkout.expectSuccessPage({
@@ -387,7 +342,7 @@ test.describe('Checkout', () => {
       })
     })
 
-    test('deve aprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento com entrada igual a 50%.', async ({ app, page }) => {
+    test('deve aprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento com entrada igual a 50%.', async ({ app }) => {
       const checkoutData = {
         customer: {
           name: 'Richard',
@@ -403,37 +358,25 @@ test.describe('Checkout', () => {
         expectedStatus: 'Pedido Aprovado!',
         paymentMethod: 'Financiamento',
         downPayment: '20000',
+        creditScore: 450,
       }
 
       await deleteOrderByEmail(checkoutData.customer.email)
 
-      await page.route('**/functions/v1/credit-analysis', async route => {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            status: 'Done',
-            score: 450,
-          }),
-        })
-      })
+      await app.checkout.mockCreditAnalysis(checkoutData.creditScore)
 
       // Arrange
-      await app.configurator.open()
-      await app.configurator.validateDefaultConfiguratorState()
-      await app.configurator.goToCheckout()
+      await app.configurator.openDefaultAndGoToCheckout()
       await app.checkout.expectLoaded()
 
       // Act
-      await app.checkout.fillCustomerlData(checkoutData.customer)
-      await app.checkout.selectStore(checkoutData.store)
-      await app.checkout.expectNoFieldErrors()
-      await app.checkout.selectPaymentMethod(checkoutData.paymentMethod)
-      await app.checkout.fillDownPayment(checkoutData.downPayment)
-
-      await app.checkout.expectSummaryTotal(checkoutData.totalPrice)
-      await app.checkout.acceptTerms()
-      await app.checkout.submit()
+      await app.checkout.completeFinancingCheckout({
+        customer: checkoutData.customer,
+        store: checkoutData.store,
+        paymentMethod: checkoutData.paymentMethod,
+        summaryTotal: checkoutData.totalPrice,
+        downPayment: checkoutData.downPayment,
+      })
 
       // Assert
       await app.checkout.expectSuccessPage({
@@ -445,7 +388,7 @@ test.describe('Checkout', () => {
       })
     })
 
-    test('deve aprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento com entrada maior que 50%.', async ({ app, page }) => {
+    test('deve aprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento com entrada maior que 50%.', async ({ app }) => {
       const checkoutData = {
         customer: {
           name: 'Gustavo',
@@ -461,37 +404,25 @@ test.describe('Checkout', () => {
         expectedStatus: 'Pedido Aprovado!',
         paymentMethod: 'Financiamento',
         downPayment: '30000',
+        creditScore: 450,
       }
 
       await deleteOrderByEmail(checkoutData.customer.email)
 
-      await page.route('**/functions/v1/credit-analysis', async route => {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            status: 'Done',
-            score: 450,
-          }),
-        })
-      })
+      await app.checkout.mockCreditAnalysis(checkoutData.creditScore)
 
       // Arrange
-      await app.configurator.open()
-      await app.configurator.validateDefaultConfiguratorState()
-      await app.configurator.goToCheckout()
+      await app.configurator.openDefaultAndGoToCheckout()
       await app.checkout.expectLoaded()
 
       // Act
-      await app.checkout.fillCustomerlData(checkoutData.customer)
-      await app.checkout.selectStore(checkoutData.store)
-      await app.checkout.expectNoFieldErrors()
-      await app.checkout.selectPaymentMethod(checkoutData.paymentMethod)
-      await app.checkout.fillDownPayment(checkoutData.downPayment)
-
-      await app.checkout.expectSummaryTotal(checkoutData.totalPrice)
-      await app.checkout.acceptTerms()
-      await app.checkout.submit()
+      await app.checkout.completeFinancingCheckout({
+        customer: checkoutData.customer,
+        store: checkoutData.store,
+        paymentMethod: checkoutData.paymentMethod,
+        summaryTotal: checkoutData.totalPrice,
+        downPayment: checkoutData.downPayment,
+      })
 
       // Assert
       await app.checkout.expectSuccessPage({

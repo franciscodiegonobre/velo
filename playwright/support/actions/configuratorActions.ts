@@ -57,6 +57,12 @@ export function createConfiguratorActions(page: Page) {
       await this.validateCarPreview('glacier-blue', 'aero')
     },
 
+    async openDefaultAndGoToCheckout() {
+      await this.open()
+      await this.validateDefaultConfiguratorState()
+      await this.goToCheckout()
+    },
+
     async goToCheckout() {
       await page.getByTestId('checkout-button').click()
       await expect(page).toHaveURL(/\/order$/)

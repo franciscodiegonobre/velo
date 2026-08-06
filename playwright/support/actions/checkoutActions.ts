@@ -26,6 +26,19 @@ export function createCheckoutActions(page: Page) {
       await expect(page.getByRole('heading', { name: 'Finalizar Pedido' })).toBeVisible()
     },
 
+    async mockCreditAnalysis(score: number) {
+      await page.route('**/functions/v1/credit-analysis', async route => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            status: 'Done',
+            score,
+          }),
+        })
+      })
+    },
+
     async expectSummaryTotal(price: string) {
       await expect(page.getByTestId('summary-total-price')).toHaveText(price)
     },
@@ -59,6 +72,33 @@ export function createCheckoutActions(page: Page) {
 
     async acceptTerms() {
       await terms.check()
+    },
+
+    async completeFinancingCheckout(data: {
+      customer: {
+        name: string
+        lastname: string
+        email: string
+        phone: string
+        document: string
+      }
+      store: string
+      paymentMethod: string
+      summaryTotal: string
+      downPayment?: string
+    }) {
+      await this.fillCustomerlData(data.customer)
+      await this.selectStore(data.store)
+      await this.expectNoFieldErrors()
+
+      await this.selectPaymentMethod(data.paymentMethod)
+      if (data.downPayment) {
+        await this.fillDownPayment(data.downPayment)
+      }
+
+      await this.expectSummaryTotal(data.summaryTotal)
+      await this.acceptTerms()
+      await this.submit()
     },
 
     async submit() {
