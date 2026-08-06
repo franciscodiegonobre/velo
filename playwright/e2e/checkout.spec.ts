@@ -386,6 +386,122 @@ test.describe('Checkout', () => {
         totalPrice: checkoutData.totalFinalPrice,
       })
     })
+
+    test('deve aprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento com entrada igual a 50%.', async ({ app, page }) => {
+      const checkoutData = {
+        customer: {
+          name: 'Richard',
+          lastname: 'Gomes',
+          email: 'richard.gomes.entrada@velo.dev',
+          document: '39434745004',
+          phone: '(11) 98765-4321',
+        },
+        store: 'Velô Paulista',
+        storeFullName: 'Velô Paulista - Av. Paulista, 1000',
+        totalPrice: 'R$ 20.400,00',
+        totalFinalPrice: 'R$ 40.400,00',
+        expectedStatus: 'Pedido Aprovado!',
+        paymentMethod: 'Financiamento',
+        downPayment: '20000',
+      }
+
+      await deleteOrderByEmail(checkoutData.customer.email)
+
+      await page.route('**/functions/v1/credit-analysis', async route => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            status: 'Done',
+            score: 450,
+          }),
+        })
+      })
+
+      // Arrange
+      await app.configurator.open()
+      await app.configurator.validateDefaultConfiguratorState()
+      await app.configurator.goToCheckout()
+      await app.checkout.expectLoaded()
+
+      // Act
+      await app.checkout.fillCustomerlData(checkoutData.customer)
+      await app.checkout.selectStore(checkoutData.store)
+      await app.checkout.expectNoFieldErrors()
+      await app.checkout.selectPaymentMethod(checkoutData.paymentMethod)
+      await app.checkout.fillDownPayment(checkoutData.downPayment)
+
+      await app.checkout.expectSummaryTotal(checkoutData.totalPrice)
+      await app.checkout.acceptTerms()
+      await app.checkout.submit()
+
+      // Assert
+      await app.checkout.expectSuccessPage({
+        status: checkoutData.expectedStatus,
+        customerName: `${checkoutData.customer.name} ${checkoutData.customer.lastname}`,
+        email: checkoutData.customer.email,
+        store: checkoutData.storeFullName,
+        totalPrice: checkoutData.totalFinalPrice,
+      })
+    })
+
+    test('deve aprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento com entrada maior que 50%.', async ({ app, page }) => {
+      const checkoutData = {
+        customer: {
+          name: 'Gustavo',
+          lastname: 'Santos',
+          email: 'gustavo.santos.entrada@velo.dev',
+          document: '79327557000',
+          phone: '(11) 98765-4321',
+        },
+        store: 'Velô Paulista',
+        storeFullName: 'Velô Paulista - Av. Paulista, 1000',
+        totalPrice: 'R$ 10.200,00',
+        totalFinalPrice: 'R$ 40.200,00',
+        expectedStatus: 'Pedido Aprovado!',
+        paymentMethod: 'Financiamento',
+        downPayment: '30000',
+      }
+
+      await deleteOrderByEmail(checkoutData.customer.email)
+
+      await page.route('**/functions/v1/credit-analysis', async route => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            status: 'Done',
+            score: 450,
+          }),
+        })
+      })
+
+      // Arrange
+      await app.configurator.open()
+      await app.configurator.validateDefaultConfiguratorState()
+      await app.configurator.goToCheckout()
+      await app.checkout.expectLoaded()
+
+      // Act
+      await app.checkout.fillCustomerlData(checkoutData.customer)
+      await app.checkout.selectStore(checkoutData.store)
+      await app.checkout.expectNoFieldErrors()
+      await app.checkout.selectPaymentMethod(checkoutData.paymentMethod)
+      await app.checkout.fillDownPayment(checkoutData.downPayment)
+
+      await app.checkout.expectSummaryTotal(checkoutData.totalPrice)
+      await app.checkout.acceptTerms()
+      await app.checkout.submit()
+
+      // Assert
+      await app.checkout.expectSuccessPage({
+        status: checkoutData.expectedStatus,
+        customerName: `${checkoutData.customer.name} ${checkoutData.customer.lastname}`,
+        email: checkoutData.customer.email,
+        store: checkoutData.storeFullName,
+        totalPrice: checkoutData.totalFinalPrice,
+      })
+    })
   })
 
 })
