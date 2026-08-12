@@ -30,6 +30,12 @@ export function createConfiguratorActions(page: Page) {
       await page.getByTestId('section-rodas').getByRole('button', { name }).click()
     },
 
+    async expectPrice(price: string) {
+      const priceElement = page.getByTestId('total-price')
+      await expect(priceElement).toBeVisible()
+      await expect(priceElement).toHaveText(price)
+    },
+
     async setOptional(name: string | RegExp, checked: boolean) {
       const optional = page.getByRole('checkbox', { name })
       if (checked) {
@@ -66,6 +72,10 @@ export function createConfiguratorActions(page: Page) {
     async goToCheckout() {
       await page.getByTestId('checkout-button').click()
       await expect(page).toHaveURL(/\/order$/)
+    },
+
+    async finishConfigurator() {
+      await page.getByRole('button', { name: 'Monte o Seu' }).click()
     },
   }
 }
