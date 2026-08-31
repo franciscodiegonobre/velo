@@ -43,3 +43,5 @@ docs/db-password.txt
 # Supabase local CLI state
 /supabase/.temp/
 /supabase/config.toml
+.vercel
+.env*
