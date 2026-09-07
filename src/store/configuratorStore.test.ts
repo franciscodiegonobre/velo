@@ -1,9 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   calculateTotalPrice,
   calculateInstallment,
   formatPrice,
   CarConfiguration,
+  useConfiguratorStore,
+  Order,
 } from './configuratorStore';
 
 describe('configuratorStore pure functions', () => {
@@ -96,5 +98,89 @@ describe('configuratorStore pure functions', () => {
       const normalized = formatted.replace(/\u00a0/g, ' ');
       expect(normalized).toBe('R$ 3.782,38');
     });
+  });
+});
+
+describe('useConfiguratorStore state actions', () => {
+  beforeEach(() => {
+    // Reset store before each test
+    useConfiguratorStore.setState({
+      configuration: {
+        exteriorColor: 'glacier-blue',
+        interiorColor: 'carbon-black',
+        wheelType: 'aero',
+        optionals: [],
+      },
+      viewMode: 'exterior',
+      orders: [],
+      currentUserEmail: null,
+    });
+  });
+
+  it('should toggle optionals correctly', () => {
+    const store = useConfiguratorStore.getState();
+    expect(store.configuration.optionals).toEqual([]);
+
+    // Add optional
+    store.toggleOptional('precision-park');
+    expect(useConfiguratorStore.getState().configuration.optionals).toEqual(['precision-park']);
+
+    // Add another
+    useConfiguratorStore.getState().toggleOptional('flux-capacitor');
+    expect(useConfiguratorStore.getState().configuration.optionals).toEqual(['precision-park', 'flux-capacitor']);
+
+    // Remove first optional
+    useConfiguratorStore.getState().toggleOptional('precision-park');
+    expect(useConfiguratorStore.getState().configuration.optionals).toEqual(['flux-capacitor']);
+  });
+
+  it('should handle login and getUserOrders correctly', () => {
+    const store = useConfiguratorStore.getState();
+    const testEmail = 'test@example.com';
+    const mockOrder: Order = {
+      id: '123',
+      configuration: store.configuration,
+      totalPrice: 40000,
+      customer: { name: 'Test', surname: 'User', email: testEmail, phone: '123', cpf: '123', store: 'A' },
+      paymentMethod: 'avista',
+      status: 'APROVADO',
+      createdAt: new Date().toISOString(),
+    };
+
+    // Try to login without orders
+    expect(store.login(testEmail)).toBe(false);
+    expect(useConfiguratorStore.getState().currentUserEmail).toBeNull();
+    expect(useConfiguratorStore.getState().getUserOrders()).toEqual([]);
+
+    // Add order
+    store.addOrder(mockOrder);
+    
+    // Login should now succeed
+    expect(useConfiguratorStore.getState().login(testEmail)).toBe(true);
+    expect(useConfiguratorStore.getState().currentUserEmail).toBe(testEmail);
+
+    // Should return the user's orders
+    expect(useConfiguratorStore.getState().getUserOrders()).toHaveLength(1);
+    expect(useConfiguratorStore.getState().getUserOrders()[0].id).toBe('123');
+
+    // Logout
+    useConfiguratorStore.getState().logout();
+    expect(useConfiguratorStore.getState().currentUserEmail).toBeNull();
+    expect(useConfiguratorStore.getState().getUserOrders()).toEqual([]);
+  });
+
+  it('should update configuration settings', () => {
+    const store = useConfiguratorStore.getState();
+    
+    store.setExteriorColor('midnight-black');
+    expect(useConfiguratorStore.getState().configuration.exteriorColor).toBe('midnight-black');
+    expect(useConfiguratorStore.getState().viewMode).toBe('exterior');
+
+    useConfiguratorStore.getState().setInteriorColor('deep-blue');
+    expect(useConfiguratorStore.getState().configuration.interiorColor).toBe('deep-blue');
+    expect(useConfiguratorStore.getState().viewMode).toBe('interior');
+
+    useConfiguratorStore.getState().setWheelType('sport');
+    expect(useConfiguratorStore.getState().configuration.wheelType).toBe('sport');
   });
 });
