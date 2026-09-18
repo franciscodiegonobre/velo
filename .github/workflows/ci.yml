@@ -10,22 +10,54 @@ on:
 
 env:
   NODE_VERSION: '24'
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  VERCEL_SCOPE: velo-65ff
 
 jobs:
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
     steps:
+      # 1. checkout of the repo code from github  
       - name: Checkout repository
         uses: actions/checkout@v6.1.0
 
+      # 2. setup of the node.js version defined in the environment
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      # 3. Install dependencies of the project
       - name: Install dependencies
         run: npm ci
 
       - name: Run unit tests
         run: npm test
+
+  build-and-deploy:
+    name: Build and Deploy Vercel Preview
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    steps:
+      # 1. checkout of the repo code from github  
+      - name: Checkout repository
+        uses: actions/checkout@v6.1.0
+
+      # 2. setup of the node.js version defined in the environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # 3. Install dependencies of the project
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Build to Vercel
+      - name: Build to Vercel
+        run: npm run build --token=$VERCEL_TOKEN
+
+      # 5. Deploy Preview in Vercel
+      - name: Deploy Preview
+        run: npm vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE
