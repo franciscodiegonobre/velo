@@ -56,7 +56,7 @@ jobs:
 
       # 4. Build to Vercel
       - name: Build to Vercel
-        run: npm run build --token=$VERCEL_TOKEN
+        run: npx vercel build --token=$VERCEL_TOKEN
 
       # 5. Deploy Preview in Vercel
       - name: Deploy Preview
