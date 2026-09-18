@@ -60,4 +60,4 @@ jobs:
 
       # 5. Deploy Preview in Vercel
       - name: Deploy Preview
-        run: npm vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE
+        run: npx vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE
