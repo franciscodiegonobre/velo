@@ -41,6 +41,8 @@ jobs:
     name: Build and Deploy Vercel Preview
     needs: unit-tests
     runs-on: ubuntu-latest
+    outputs:
+      deployment-url: ${{ steps.deploy.outputs.deployment-url }}
     steps:
       # 1. checkout of the repo code from github  
       - name: Checkout repository
@@ -66,4 +68,45 @@ jobs:
 
       # 6. Deploy Preview in Vercel
       - name: Deploy Preview
-        run: npx vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE
+        id: deploy
+        run: |
+          URL=$(npx vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE)
+          echo "deployment-url=${URL}" >> $GITHUB_OUTPUT
+          
+
+  e2e-tests:
+    name: Run End-to-End Tests
+    needs: build-and-deploy
+    runs-on: ubuntu-latest
+    steps:
+      # 1. checkout of the repo code from github  
+      - name: Checkout repository
+        uses: actions/checkout@v6.1.0
+
+      # 2. setup of the node.js version defined in the environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # 3. Install dependencies of the project
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Install Playwright browsers - Chromium
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+      
+      # 5. Run end-to-end tests
+      - name: Run end-to-end tests
+        run: npx playwright test playwright/e2e/online.spec.ts
+        env:
+          BASE_URL: ${{ needs.build-and-deploy.outputs.deployment-url }}
+          
+      # 7. Playwright report
+      - name: Upload Report results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: playwright-report
+          path: playwright/test-results
