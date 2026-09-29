@@ -102,6 +102,7 @@ jobs:
         run: npx playwright test
         env:
           BASE_URL: ${{ needs.build-and-deploy.outputs.deployment-url }}
+          PLAYWRIGHT_DATABASE_URL: ${{ secrets.PLAYWRIGHT_DATABASE_URL }}
           
       # 7. Playwright report
       - name: Upload Report results
