@@ -99,7 +99,7 @@ jobs:
       
       # 5. Run end-to-end tests
       - name: Run end-to-end tests
-        run: npx playwright test playwright/e2e/online.spec.ts
+        run: npx playwright test
         env:
           BASE_URL: ${{ needs.build-and-deploy.outputs.deployment-url }}
           
