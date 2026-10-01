@@ -1,7 +1,7 @@
-# Workflow de Integração Contínua focado em testes unitários com Vitest
+# Workflow de Deployment Contínuo focado em testes unitários com Vitest
 # Estrutura base preparada para expansão futura de novos jobs e etapas
 
-name: Continuous Integration
+name: Continuous Deployment
 
 on:
   push:
@@ -111,3 +111,17 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report
+
+  promote:
+    name: Promote to Production
+    needs: e2e-tests
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Vercel promotion in multiline format to make it more readable 
+      - name: Vercel promote to production
+        run: |
+          npx vercel promote ${{ needs.build-and-deploy.outputs.deployment-url }} \
+          --token=$VERCEL_TOKEN \
+          --scope=$VERCEL_SCOPE \
+          --yes
