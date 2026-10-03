@@ -103,6 +103,7 @@ jobs:
         env:
           BASE_URL: ${{ needs.build-and-deploy.outputs.deployment-url }}
           PLAYWRIGHT_DATABASE_URL: ${{ secrets.PLAYWRIGHT_DATABASE_URL }}
+          TESTDINO_TOKEN: ${{ secrets.TD_TOKEN }}
           
       # 7. Playwright report
       - name: Upload Report results
