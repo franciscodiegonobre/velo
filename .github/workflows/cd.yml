@@ -1,5 +1,4 @@
-# Workflow de Deployment Contínuo focado em testes unitários com Vitest
-# Estrutura base preparada para expansão futura de novos jobs e etapas
+# Workflow de Deployment Contínuo focado em testes unitários e E2E isolados por ambiente
 
 name: Continuous Deployment
 
@@ -20,20 +19,21 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     steps:
-      # 1. checkout of the repo code from github  
+      # 1. Checkout do código
       - name: Checkout repository
         uses: actions/checkout@v6.1.0
 
-      # 2. setup of the node.js version defined in the environment
+      # 2. Configuração do Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      # 3. Install dependencies of the project
+      # 3. Instalação de dependências
       - name: Install dependencies
         run: npm ci
 
+      # 4. Execução dos testes unitários
       - name: Run unit tests
         run: npm test
 
@@ -44,68 +44,67 @@ jobs:
     outputs:
       deployment-url: ${{ steps.deploy.outputs.deployment-url }}
     steps:
-      # 1. checkout of the repo code from github  
+      # 1. Checkout do código
       - name: Checkout repository
         uses: actions/checkout@v6.1.0
 
-      # 2. setup of the node.js version defined in the environment
+      # 2. Configuração do Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      # 3. Install dependencies of the project
+      # 3. Instalação de dependências
       - name: Install dependencies
         run: npm ci
 
-      # 4. Obtain Vercel configs 
+      # 4. Baixa as configurações e variáveis de PREVIEW
       - name: Pull Vercel Config
-        run: yarn vercel pull --yes --environment=preview --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE
+        run: npx vercel pull --yes --environment=preview --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE
 
-      # 5. Build to Vercel
+      # 5. Compila o bundle apontando para o Supabase Preview
       - name: Build to Vercel
         run: npx vercel build --token=$VERCEL_TOKEN
 
-      # 6. Deploy Preview in Vercel
+      # 6. Faz o deploy do Preview na Vercel
       - name: Deploy Preview
         id: deploy
         run: |
           URL=$(npx --silent vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE)
           echo "deployment-url=${URL}" >> $GITHUB_OUTPUT
-          
 
   e2e-tests:
     name: Run End-to-End Tests
     needs: build-and-deploy
     runs-on: ubuntu-latest
     steps:
-      # 1. checkout of the repo code from github  
+      # 1. Checkout do código
       - name: Checkout repository
         uses: actions/checkout@v6.1.0
 
-      # 2. setup of the node.js version defined in the environment
+      # 2. Configuração do Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      # 3. Install dependencies of the project
+      # 3. Instalação de dependências
       - name: Install dependencies
         run: npm ci
 
-      # 4. Install Playwright browsers - Chromium
+      # 4. Instalação dos navegadores do Playwright
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
-      
-      # 5. Run end-to-end tests
+
+      # 5. Execução dos testes E2E contra a URL de Preview
       - name: Run end-to-end tests
         run: npx playwright test
         env:
           BASE_URL: ${{ needs.build-and-deploy.outputs.deployment-url }}
           PLAYWRIGHT_DATABASE_URL: ${{ secrets.PLAYWRIGHT_DATABASE_URL }}
           TESTDINO_TOKEN: ${{ secrets.TD_TOKEN }}
-          
-      # 7. Playwright report
+
+      # 6. Upload do relatório do Playwright
       - name: Upload Report results
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7.0.1
@@ -113,16 +112,33 @@ jobs:
           name: playwright-report
           path: playwright-report
 
-  promote:
-    name: Promote to Production
+  deploy-production:
+    name: Build and Deploy to Production
     needs: [build-and-deploy, e2e-tests]
     runs-on: ubuntu-latest
-
     steps:
-      # 1. Vercel promotion in multiline format to make it more readable 
-      - name: Vercel promote to production
-        run: |
-          npx vercel@latest promote ${{ needs.build-and-deploy.outputs.deployment-url }} \
-          --token=$VERCEL_TOKEN \
-          --scope=$VERCEL_SCOPE \
-          --yes
+      # 1. Checkout do código
+      - name: Checkout repository
+        uses: actions/checkout@v6.1.0
+
+      # 2. Configuração do Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # 3. Instalação de dependências
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Baixa as configurações e variáveis de PRODUÇÃO
+      - name: Pull Vercel Production Config
+        run: npx vercel pull --yes --environment=production --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE
+
+      # 5. Compila um novo bundle injetando os valores das variáveis de Produção
+      - name: Build for Production
+        run: npx vercel build --prod --token=$VERCEL_TOKEN
+
+      # 6. Realiza o deploy final para o ambiente de Produção
+      - name: Deploy to Production
+        run: npx vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE
